@@ -28,6 +28,8 @@ class TestObject(unittest.TestCase):
 		class Foo(Bar):
 			new_attr = Generic()
 			default = Generic(10)
+
+
 		return Foo
 
 	def _make_nested(self):
@@ -220,134 +222,26 @@ class TestGeneric(unittest.TestCase):
 		del instance.test
 		self.assertEquals(instance.test, None)
 
-	def test___set___mutator(self):
+	def test___set___validator(self):
+		from valid_model import ValidationError
 		validator = bool
 		non_callable = 'not a validator'
-		_ = self._make_one(validator=validator)
+		instance = self._make_one(validator=validator)
 		self.assertRaises(TypeError, self._make_one, validator=non_callable)
+		self.assertRaises(ValidationError, setattr, instance, 'test', False)
 
-
-class TestString(unittest.TestCase):
-	@staticmethod
-	def _make_one(default=None, validator=None, mutator=None):
-		from valid_model.descriptors import String
-		from valid_model import Object
-		class Foo(Object):
-			test = String(default=default, validator=validator, mutator=mutator)
-		return Foo()
-	
-	def test___set___validator(self):
+	def test___set___mutator(self):
 		from valid_model import ValidationError
-		# validator = bool
-		# instance = self._make_one(validator=validator)
-		# try:
-		# 	instance.test = False
-		# except ValidationError:
-		# 	pass
-		# else:
-		# 	raise AssertionError('Validator should have fired')
-		# self.assertRaises(TypeError, self._make_one, non_callable)
-
-
-class TestFloat(unittest.TestCase):
-	@staticmethod
-	def _make_one(default=None, validator=None, mutator=None):
-		from valid_model.descriptors import Float
-		from valid_model import Object
-		class Foo(Object):
-			test = Float(default=default, validator=validator, mutator=mutator)
-		return Foo()
-	
-	def test___set___validator(self):
-		from valid_model import ValidationError
-		# validator = bool
-		# instance = self._make_one(validator=validator)
-		# try:
-		# 	instance.test = False
-		# except ValidationError:
-		# 	pass
-		# else:
-		# 	raise AssertionError('Validator should have fired')
-		# self.assertRaises(TypeError, self._make_one, non_callable)
-	
-
-class TestList(unittest.TestCase):
-	@staticmethod
-	def _make_one(validator=None, mutator=None):
-		from valid_model.descriptors import List
-		from valid_model import Object
-		class Foo(Object):
-			test = List(validator=validator, mutator=mutator)
-		return Foo()
-
-	def test___set___validator(self):
-		from valid_model import ValidationError
-		# validator = bool
-		# instance = self._make_one(validator=validator)
-		# try:
-		# 	instance.test = False
-		# except ValidationError:
-		# 	pass
-		# else:
-		# 	raise AssertionError('Validator should have fired')
-		# self.assertRaises(TypeError, self._make_one, non_callable)
-	
-	def test___delete__(self):
-		instance = self._make_one()
-		del instance.test
-		self.assertEquals(instance.test, None)
-
-
-class TestSet(unittest.TestCase):
-	@staticmethod
-	def _make_one(validator=None, mutator=None):
-		from valid_model.descriptors import Set
-		from valid_model import Object
-		class Foo(Object):
-			test = Set(validator=validator, mutator=mutator)
-		return Foo()
-	
-	def test___set___validator(self):
-		from valid_model import ValidationError
-		# validator = bool
-		# instance = self._make_one(validator=validator)
-		# try:
-		# 	instance.test = False
-		# except ValidationError:
-		# 	pass
-		# else:
-		# 	raise AssertionError('Validator should have fired')
-		# self.assertRaises(TypeError, self._make_one, non_callable)
-	
-	def test___delete__(self):
-		instance = self._make_one()
-		del instance.test
-		self.assertEquals(instance.test, None)
-
-
-class TestDateTime(unittest.TestCase):
-	@staticmethod
-	def _make_one(default=None, validator=None, mutator=None):
-		from valid_model.descriptors import DateTime
-		from valid_model import Object
-		class Foo(Object):
-			test = DateTime(
-				default=default, validator=validator, mutator=mutator
-			)
-		return Foo()
-	
-	def test___set___validator(self):
-		from valid_model import ValidationError
-		# validator = bool
-		# instance = self._make_one(validator=validator)
-		# try:
-		# 	instance.test = False
-		# except ValidationError:
-		# 	pass
-		# else:
-		# 	raise AssertionError('Validator should have fired')
-		# self.assertRaises(TypeError, self._make_one, non_callable)
-	
+		def mutator(x):
+			#try:
+			return int(x)
+			#except:
+			#	raise ValidationError('not an int')
+		#mutator = int
+		non_callable = 'not a mutator'
+		instance = self._make_one(mutator=mutator)
+		self.assertRaises(TypeError, self._make_one, mutator=non_callable)
+		self.assertRaises(ValidationError, setattr, instance, 'test', 'NaN')
 
 class TestEmbeddedObject(unittest.TestCase):
 	@staticmethod
@@ -375,7 +269,6 @@ class TestEmbeddedObject(unittest.TestCase):
 		del instance.test
 		self.assertEquals(instance.test, None)
 
-
 class TestObjectList(unittest.TestCase):
 	@staticmethod
 	def _make_one(mutator=None):
@@ -387,33 +280,33 @@ class TestObjectList(unittest.TestCase):
 	
 	def test___set___validator(self):
 		from valid_model import ValidationError
-		# validator = bool
-		# instance = self._make_one(validator=validator)
-		# try:
-		# 	instance.test = False
-		# except ValidationError:
-		# 	pass
-		# else:
-		# 	raise AssertionError('Validator should have fired')
-		# self.assertRaises(TypeError, self._make_one, non_callable)
+		instance = self._make_one()
+		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
+		self.assertRaises(ValidationError, setattr, instance, 'test', [10])
 
 	def test___delete__(self):
 		instance = self._make_one()
 		del instance.test
 		self.assertEquals(instance.test, None)
 
-
-class TestBool(unittest.TestCase):
+class TestString(unittest.TestCase):
 	@staticmethod
 	def _make_one(default=None, validator=None, mutator=None):
-		from valid_model.descriptors import Bool
+		from valid_model.descriptors import String
 		from valid_model import Object
 		class Foo(Object):
-			test = Bool(default=default, validator=validator, mutator=mutator)
+			test = String(default=default, validator=validator, mutator=mutator)
 		return Foo()
 	
 	def test___set___validator(self):
 		from valid_model import ValidationError
+		instance = self._make_one()
+		instance.test = u'hello'
+		instance.test = 'hello'
+		self.assertTrue(isinstance(instance.test, unicode))
+		instance.test = 10
+		self.assertEquals(instance.test, u'10')
+		self.assertTrue(isinstance(instance.test, unicode))
 		# validator = bool
 		# instance = self._make_one(validator=validator)
 		# try:
@@ -423,7 +316,6 @@ class TestBool(unittest.TestCase):
 		# else:
 		# 	raise AssertionError('Validator should have fired')
 		# self.assertRaises(TypeError, self._make_one, non_callable)
-
 
 class TestInteger(unittest.TestCase):
 	@staticmethod
@@ -438,6 +330,51 @@ class TestInteger(unittest.TestCase):
 	
 	def test___set___validator(self):
 		from valid_model import ValidationError
+		instance = self._make_one()
+		instance.test = 5
+		self.assertEquals(instance.test, 5)
+		instance.test = '15'
+		self.assertEquals(instance.test, 15)
+		instance.test = 3.5
+		self.assertEquals(instance.test, 3)
+		self.assertRaises(ValidationError, setattr, instance, 'test', 'hello')
+
+class TestFloat(unittest.TestCase):
+	@staticmethod
+	def _make_one(default=None, validator=None, mutator=None):
+		from valid_model.descriptors import Float
+		from valid_model import Object
+		class Foo(Object):
+			test = Float(default=default, validator=validator, mutator=mutator)
+		return Foo()
+	
+	def test___set___validator(self):
+		from valid_model import ValidationError
+		instance = self._make_one()
+		instance.test = 5.0
+		self.assertEquals(instance.test, 5.0)
+		instance.test = 10
+		self.assertEquals(instance.test, 10.0)
+		self.assertRaises(ValidationError, setattr, instance, 'test', 'hello')
+
+class TestBool(unittest.TestCase):
+	@staticmethod
+	def _make_one(default=None, validator=None, mutator=None):
+		from valid_model.descriptors import Bool
+		from valid_model import Object
+		class Foo(Object):
+			test = Bool(default=default, validator=validator, mutator=mutator)
+		return Foo()
+	
+	def test___set___validator(self):
+		from valid_model import ValidationError
+		instance = self._make_one()
+		instance.test = object()
+		self.assertEquals(instance.test, True)
+		instance.test = True
+		self.assertEquals(instance.test, True)
+		instance.test = False
+		self.assertEquals(instance.test, False)
 		# validator = bool
 		# instance = self._make_one(validator=validator)
 		# try:
@@ -448,7 +385,26 @@ class TestInteger(unittest.TestCase):
 		# 	raise AssertionError('Validator should have fired')
 		# self.assertRaises(TypeError, self._make_one, non_callable)
 
-
+class TestDateTime(unittest.TestCase):
+	@staticmethod
+	def _make_one(default=None, validator=None, mutator=None):
+		from valid_model.descriptors import DateTime
+		from valid_model import Object
+		class Foo(Object):
+			test = DateTime(
+				default=default, validator=validator, mutator=mutator
+			)
+		return Foo()
+	
+	def test___set___validator(self):
+		from valid_model import ValidationError
+		from datetime import datetime
+		instance = self._make_one()
+		today = datetime.utcnow()
+		instance.test = today
+		self.assertEquals(instance.test, today)
+		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
+	
 class TestTimeDelta(unittest.TestCase):
 	@staticmethod
 	def _make_one(default=None, validator=None, mutator=None):
@@ -462,16 +418,47 @@ class TestTimeDelta(unittest.TestCase):
 	
 	def test___set___validator(self):
 		from valid_model import ValidationError
-		# validator = bool
-		# instance = self._make_one(validator=validator)
-		# try:
-		# 	instance.test = False
-		# except ValidationError:
-		# 	pass
-		# else:
-		# 	raise AssertionError('Validator should have fired')
-		# self.assertRaises(TypeError, self._make_one, non_callable)
+		from datetime import timedelta
+		instance = self._make_one()
+		one_minute = timedelta(minutes=1)
+		instance.test = one_minute
+		self.assertEquals(instance.test, one_minute)
+		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
 
+class TestList(unittest.TestCase):
+	@staticmethod
+	def _make_one(validator=None, mutator=None):
+		from valid_model.descriptors import List
+		from valid_model import Object
+		class Foo(Object):
+			test = List(validator=validator, mutator=mutator)
+		return Foo()
+
+	def test___set___validator(self):
+		from valid_model import ValidationError
+		instance = self._make_one()
+		instance.test = [True, 10]
+		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
+	
+class TestSet(unittest.TestCase):
+	@staticmethod
+	def _make_one(validator=None, mutator=None):
+		from valid_model.descriptors import Set
+		from valid_model import Object
+		class Foo(Object):
+			test = Set(validator=validator, mutator=mutator)
+		return Foo()
+	
+	def test___set___validator(self):
+		from valid_model import ValidationError
+		instance = self._make_one()
+		instance.test = set([True, 10])
+		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
+	
+	def test___delete__(self):
+		instance = self._make_one()
+		del instance.test
+		self.assertEquals(instance.test, None)
 
 class TestDict(unittest.TestCase):
 	@staticmethod
@@ -486,14 +473,6 @@ class TestDict(unittest.TestCase):
 	
 	def test___set___validator(self):
 		from valid_model import ValidationError
-		# validator = bool
-		# instance = self._make_one(validator=validator)
-		# try:
-		# 	instance.test = False
-		# except ValidationError:
-		# 	pass
-		# else:
-		# 	raise AssertionError('Validator should have fired')
-		# self.assertRaises(TypeError, self._make_one, non_callable)
-
-
+		instance = self._make_one()
+		instance.test = {'a': 1, 'b': 2}
+		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
