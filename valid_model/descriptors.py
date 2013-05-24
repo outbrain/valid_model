@@ -28,8 +28,8 @@ class Generic(object):
 		if value is not None:
 			try:
 				value = self.mutator(value)
-			except ValidationError:
-				raise ValidationError(self.name)
+			except (TypeError, ValueError, ValidationError), ex:
+				raise ValidationError("{}: {}".format(self.name, ex))
 			if not self.validator(value):
 				raise ValidationError(self.name)
 		getattr(instance, '_fields')[self.name] = value
@@ -38,6 +38,43 @@ class Generic(object):
 	def __delete__(self, instance):
 		getattr(instance, '_fields')[self.name] = None
 
+class EmbeddedObject(Generic):
+	def __init__(self, class_obj, mutator=None):
+		self.class_obj = class_obj
+		validator = lambda x: isinstance(x, class_obj)
+		Generic.__init__(
+			self, default=class_obj, validator=validator, mutator=mutator
+		)
+	
+	def __set__(self, instance, value):
+		if isinstance(value, dict):
+			value = self.class_obj(**value)
+		return Generic.__set__(self, instance, value)
+
+class ObjectList(Generic): 
+	def __init__(self, class_obj, mutator=None):
+		self.class_obj = class_obj
+		validator = lambda x: all(isinstance(i, class_obj) for i in x)
+		Generic.__init__(
+			self, default=list, validator=validator, mutator=mutator
+		)
+	
+	def __set__(self, instance, value):
+		if not isinstance(value, list):
+			raise ValidationError("{} is not a list".format(value))
+		new_value = []
+		for v in value:
+			if isinstance(v, dict):
+				new_value.append(self.class_obj(**v))
+			elif isinstance(v, self.class_obj):
+				new_value.append(v)
+			else:
+				raise ValidationError(
+					"Cannot convert from {} to {}".format(
+						v.__class__.__name__, self.class_obj.__name__
+					)
+				)
+		return Generic.__set__(self, instance, new_value)
 
 class String(Generic):
 	"""
@@ -63,6 +100,7 @@ class Integer(Generic):
 	"""
 	This descriptor will convert any set value to a int before being mutated and
 	validated.
+	Note: booleans can be cast to int
 	"""
 	def __init__(self, default=None, validator=None, mutator=None):
 		Generic.__init__(
@@ -71,7 +109,10 @@ class Integer(Generic):
 	
 	def __set__(self, instance, value):
 		if value is not None:
-			value = int(value)
+			try:
+				value = int(value)
+			except ValueError:
+				raise ValidationError("{!r} is not an int".format(value))
 		return Generic.__set__(self, instance, value)
 
 class Float(Generic):
@@ -86,7 +127,10 @@ class Float(Generic):
 	
 	def __set__(self, instance, value):
 		if value is not None:
-			value = float(value)
+			try:
+				value = float(value)
+			except ValueError:
+				raise ValidationError("{!r} is not a float".format(value))
 		return Generic.__set__(self, instance, value)
 
 class Bool(Generic):
@@ -115,7 +159,7 @@ class DateTime(Generic):
 	
 	def __set__(self, instance, value):
 		if value is not None and not isinstance(value, datetime):
-			raise TypeError
+			raise ValidationError("{!r} is not a datetime".format(value))
 		return Generic.__set__(self, instance, value)
 
 class TimeDelta(Generic):
@@ -130,47 +174,8 @@ class TimeDelta(Generic):
 	
 	def __set__(self, instance, value):
 		if value is not None and not isinstance(value, timedelta):
-			raise TypeError
+			raise ValidationError("{!r} is not a timedelta".format(value))
 		return Generic.__set__(self, instance, value)
-
-
-class EmbeddedObject(Generic):
-	def __init__(self, class_obj, mutator=None):
-		self.class_obj = class_obj
-		validator = lambda x: isinstance(x, class_obj)
-		Generic.__init__(
-			self, default=class_obj, validator=validator, mutator=mutator
-		)
-	
-	def __set__(self, instance, value):
-		if isinstance(value, dict):
-			value = self.class_obj(**value)
-		return Generic.__set__(self, instance, value)
-
-class ObjectList(Generic): 
-	def __init__(self, class_obj, mutator=None):
-		self.class_obj = class_obj
-		validator = lambda x: all(isinstance(i, class_obj) for i in x)
-		Generic.__init__(
-			self, default=list, validator=validator, mutator=mutator
-		)
-	
-	def __set__(self, instance, value):
-		if not isinstance(value, list):
-			raise ValueError("{} is not a list".format(value))
-		new_value = []
-		for v in value:
-			if isinstance(v, dict):
-				new_value.append(self.class_obj(**v))
-			elif isinstance(v, self.class_obj):
-				new_value.append(v)
-			else:
-				raise ValueError(
-					"Cannot convert from {} to {}".format(
-						v.__class__.__name__, self.class_obj.__name__
-					)
-				)
-		return Generic.__set__(self, instance, new_value)
 
 class List(Generic):
 	def __init__(self, validator=None, mutator=None):
@@ -180,7 +185,7 @@ class List(Generic):
 	
 	def __set__(self, instance, value):
 		if not isinstance(value, list):
-			raise ValueError("{} is not a list".format(value))
+			raise ValidationError("{!r} is not a list".format(value))
 		return Generic.__set__(self, instance, value)
 
 class Set(Generic):
@@ -191,7 +196,7 @@ class Set(Generic):
 	
 	def __set__(self, instance, value):
 		if not isinstance(value, set):
-			raise ValueError("{} is not a set".format(value))
+			raise ValidationError("{!r} is not a set".format(value))
 		return Generic.__set__(self, instance, value)
 
 class Dict(Generic):
@@ -202,7 +207,7 @@ class Dict(Generic):
 	
 	def __set__(self, instance, value):
 		if not isinstance(value, dict):
-			raise ValueError("{} is not a dict".format(value))
+			raise ValidationError("{!r} is not a dict".format(value))
 		return Generic.__set__(self, instance, value)
 
 
