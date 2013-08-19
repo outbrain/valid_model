@@ -178,9 +178,9 @@ class TimeDelta(Generic):
 		return Generic.__set__(self, instance, value)
 
 class List(Generic):
-	def __init__(self, validator=None, mutator=None):
+	def __init__(self, default=list, validator=None, mutator=None):
 		Generic.__init__(
-			self, default=list, validator=validator, mutator=mutator
+			self, default=default, validator=validator, mutator=mutator
 		)
 	
 	def __set__(self, instance, value):
@@ -189,9 +189,9 @@ class List(Generic):
 		return Generic.__set__(self, instance, value)
 
 class Set(Generic):
-	def __init__(self, validator=None, mutator=None):
+	def __init__(self, default=set, validator=None, mutator=None):
 		Generic.__init__(
-			self, default=set, validator=validator, mutator=mutator
+			self, default=default, validator=validator, mutator=mutator
 		)
 	
 	def __set__(self, instance, value):
