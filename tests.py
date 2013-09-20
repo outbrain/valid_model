@@ -89,21 +89,21 @@ class TestObject(unittest.TestCase):
 		self.assertEquals(instance.default, 5)
 
 		# attributed with callable default value
-		self.assertEquals(instance.called_default, 'hello') 
+		self.assertEquals(instance.called_default, 'hello')
 
 		# field_names was populated by the metaclass properly
 		self.assertSetEqual(
-			instance.field_names, 
+			instance.field_names,
 			{'basic', 'default', 'called_default'}
 		)
 		self.assertSetEqual(
-			Foo.field_names, 
+			Foo.field_names,
 			{'basic', 'default', 'called_default'}
 		)
 
 		# __json__
 		self.assertDictEqual(
-			instance.__json__(), 
+			instance.__json__(),
 			{'default': 5, 'called_default': 'hello', 'basic': 'test'}
 		)
 
@@ -133,11 +133,11 @@ class TestObject(unittest.TestCase):
 		instance = Foo()
 		self.assertEquals(instance.default, 10)
 		self.assertSetEqual(
-			instance.field_names, 
+			instance.field_names,
 			{'basic', 'default', 'called_default', 'new_attr'}
 		)
 		self.assertSetEqual(
-			Foo.field_names, 
+			Foo.field_names,
 			{'basic', 'default', 'called_default', 'new_attr'}
 		)
 
@@ -165,7 +165,7 @@ class TestObject(unittest.TestCase):
 			instance.__json__(),
 			{'basic': None, 'default': 5, 'embedded': {'t1': None, 't2': 80}}
 		)
-	
+
 	def test_nested_validate(self):
 		# test that nested object calls validate method
 		from valid_model import ValidationError
@@ -251,7 +251,7 @@ class TestEmbeddedObject(unittest.TestCase):
 		class Foo(Object):
 			test = EmbeddedObject(Object, mutator=mutator)
 		return Foo()
-	
+
 	def test___set___validator(self):
 		from valid_model import ValidationError
 		# validator = bool
@@ -277,12 +277,35 @@ class TestObjectList(unittest.TestCase):
 		class Foo(Object):
 			test = ObjectList(Object, mutator=mutator)
 		return Foo()
-	
+
 	def test___set___validator(self):
 		from valid_model import ValidationError
 		instance = self._make_one()
 		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
 		self.assertRaises(ValidationError, setattr, instance, 'test', [10])
+
+	def test___delete__(self):
+		instance = self._make_one()
+		del instance.test
+		self.assertEquals(instance.test, None)
+
+class TestObjectDict(unittest.TestCase):
+	@staticmethod
+	def _make_one(mutator=None):
+		from valid_model.descriptors import ObjectDict
+		from valid_model import Object
+		class Foo(Object):
+			test = ObjectDict(Object, mutator=mutator)
+		return Foo()
+
+	def test___set___validator(self):
+		from valid_model import ValidationError
+		instance = self._make_one()
+		nested_instance = self._make_one()
+		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
+		self.assertRaises(ValidationError, setattr, instance, 'test', {'foo': 10})
+		instance.test = {'foo': nested_instance}
+		raise Exception(instance.__json__())
 
 	def test___delete__(self):
 		instance = self._make_one()
@@ -297,7 +320,7 @@ class TestString(unittest.TestCase):
 		class Foo(Object):
 			test = String(default=default, validator=validator, mutator=mutator)
 		return Foo()
-	
+
 	def test___set___validator(self):
 		from valid_model import ValidationError
 		instance = self._make_one()
@@ -327,7 +350,7 @@ class TestInteger(unittest.TestCase):
 				default=default, validator=validator, mutator=mutator
 			)
 		return Foo()
-	
+
 	def test___set___validator(self):
 		from valid_model import ValidationError
 		instance = self._make_one()
@@ -347,7 +370,7 @@ class TestFloat(unittest.TestCase):
 		class Foo(Object):
 			test = Float(default=default, validator=validator, mutator=mutator)
 		return Foo()
-	
+
 	def test___set___validator(self):
 		from valid_model import ValidationError
 		instance = self._make_one()
@@ -365,7 +388,7 @@ class TestBool(unittest.TestCase):
 		class Foo(Object):
 			test = Bool(default=default, validator=validator, mutator=mutator)
 		return Foo()
-	
+
 	def test___set___validator(self):
 		from valid_model import ValidationError
 		instance = self._make_one()
@@ -395,7 +418,7 @@ class TestDateTime(unittest.TestCase):
 				default=default, validator=validator, mutator=mutator
 			)
 		return Foo()
-	
+
 	def test___set___validator(self):
 		from valid_model import ValidationError
 		from datetime import datetime
@@ -404,7 +427,7 @@ class TestDateTime(unittest.TestCase):
 		instance.test = today
 		self.assertEquals(instance.test, today)
 		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
-	
+
 class TestTimeDelta(unittest.TestCase):
 	@staticmethod
 	def _make_one(default=None, validator=None, mutator=None):
@@ -415,7 +438,7 @@ class TestTimeDelta(unittest.TestCase):
 				default=default, validator=validator, mutator=mutator
 			)
 		return Foo()
-	
+
 	def test___set___validator(self):
 		from valid_model import ValidationError
 		from datetime import timedelta
@@ -439,7 +462,7 @@ class TestList(unittest.TestCase):
 		instance = self._make_one()
 		instance.test = [True, 10]
 		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
-	
+
 class TestSet(unittest.TestCase):
 	@staticmethod
 	def _make_one(validator=None, mutator=None):
@@ -448,13 +471,13 @@ class TestSet(unittest.TestCase):
 		class Foo(Object):
 			test = Set(validator=validator, mutator=mutator)
 		return Foo()
-	
+
 	def test___set___validator(self):
 		from valid_model import ValidationError
 		instance = self._make_one()
 		instance.test = set([True, 10])
 		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
-	
+
 	def test___delete__(self):
 		instance = self._make_one()
 		del instance.test
@@ -470,7 +493,7 @@ class TestDict(unittest.TestCase):
 				default=default, validator=validator, mutator=mutator
 			)
 		return Foo()
-	
+
 	def test___set___validator(self):
 		from valid_model import ValidationError
 		instance = self._make_one()
@@ -545,6 +568,11 @@ class TestValidators(unittest.TestCase):
 		self.assertTrue(contains(12)([12, 13]))
 		self.assertFalse(contains(11)([12, 13]))
 
+	def test_not_contains(self):
+		from valid_model.validators import not_contains
+		self.assertFalse(not_contains(12)([12, 13]))
+		self.assertTrue(not_contains(11)([12, 13]))
+
 	def test_is_in(self):
 		from valid_model.validators import is_in
 		self.assertTrue(is_in([12, 13])(12))
@@ -577,3 +605,6 @@ class TestValidators(unittest.TestCase):
 		self.assertTrue(v(150))
 		self.assertFalse(v(10))
 		self.assertFalse(v("hello"))
+
+if __name__ == '__main__':
+    unittest.main()

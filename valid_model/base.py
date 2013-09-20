@@ -76,6 +76,11 @@ class Object(object):
 					v.__json__() if hasattr(v, '__json__') else v
 					for v in value
 				]
+			elif isinstance(value, dict):
+				json_doc[key] = dict(
+					(k, v.__json__()) if hasattr(v, '__json__') else (k, v)
+					for k, v in value.iteritems()
+				)
 			else:
 				json_doc[key] = value
 				

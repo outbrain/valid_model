@@ -76,6 +76,31 @@ class ObjectList(Generic):
 				)
 		return Generic.__set__(self, instance, new_value)
 
+class ObjectDict(Generic): 
+	def __init__(self, class_obj, mutator=None):
+		self.class_obj = class_obj
+		validator = lambda x: all(isinstance(i, class_obj) for i in x.itervalues())
+		Generic.__init__(
+			self, default=dict, validator=validator, mutator=mutator
+		)
+	
+	def __set__(self, instance, value):
+		if not isinstance(value, dict):
+			raise ValidationError("{!r} is not a dict".format(value))
+		new_value = {}
+		for k, v in value.iteritems():
+			if isinstance(v, dict):
+				new_value[k] = self.class_obj(**v)
+			elif isinstance(v, self.class_obj):
+				new_value[k] = v
+			else:
+				raise ValidationError(
+					"Cannot convert from {} to {}".format(
+						v.__class__.__name__, self.class_obj.__name__
+					)
+				)
+		return Generic.__set__(self, instance, new_value)
+
 class String(Generic):
 	"""
 	This descriptor will convert any set value to a python unicode string before
