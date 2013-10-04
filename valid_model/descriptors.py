@@ -3,8 +3,9 @@ from .exc import ValidationError
 
 class Generic(object):
 	name = None
-	def __init__(self, default=None, validator=None, mutator=None):
+	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
 		self.default = default
+		self.nullable = nullable
 		if validator is None:
 			self.validator = lambda x: True
 		elif not callable(validator):
@@ -25,7 +26,9 @@ class Generic(object):
 		return getattr(instance, '_fields')[self.name]
 
 	def __set__(self, instance, value):
-		if value is not None:
+		if value is None and not self.nullable:
+			raise ValidationError("{} is not nullable".format(self.name))
+		elif value is not None:
 			try:
 				value = self.mutator(value)
 			except (TypeError, ValueError, ValidationError), ex:
@@ -107,9 +110,9 @@ class String(Generic):
 	being mutated and validated.  If the value is type(str) it will be decoded 
 	using utf-8
 	"""
-	def __init__(self, default=None, validator=None, mutator=None):
+	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
-			self, default=default, validator=validator, mutator=mutator
+			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
 	
 	def __set__(self, instance, value):
@@ -127,9 +130,9 @@ class Integer(Generic):
 	validated.
 	Note: booleans can be cast to int
 	"""
-	def __init__(self, default=None, validator=None, mutator=None):
+	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
-			self, default=default, validator=validator, mutator=mutator
+			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
 	
 	def __set__(self, instance, value):
@@ -145,9 +148,9 @@ class Float(Generic):
 	This descriptor will convert any set value to a float before being mutated 
 	and validated.
 	"""
-	def __init__(self, default=None, validator=None, mutator=None):
+	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
-			self, default=default, validator=validator, mutator=mutator
+			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
 	
 	def __set__(self, instance, value):
@@ -163,9 +166,9 @@ class Bool(Generic):
 	This descriptor will convert any set value to a bool before being mutated 
 	and validated.
 	"""
-	def __init__(self, default=None, validator=None, mutator=None):
+	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
-			self, default=default, validator=validator, mutator=mutator
+			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
 	
 	def __set__(self, instance, value):
@@ -177,9 +180,9 @@ class DateTime(Generic):
 	This descriptor will assert any set value is a datetime or None before being
 	mutated and validated.
 	"""
-	def __init__(self, default=None, validator=None, mutator=None):
+	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
-			self, default=default, validator=validator, mutator=mutator
+			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
 	
 	def __set__(self, instance, value):
@@ -192,9 +195,9 @@ class TimeDelta(Generic):
 	This descriptor will assert any set value is a timedelta or None before 
 	being mutated and validated.
 	"""
-	def __init__(self, default=None, validator=None, mutator=None):
+	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
-			self, default=default, validator=validator, mutator=mutator
+			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
 	
 	def __set__(self, instance, value):
@@ -203,9 +206,9 @@ class TimeDelta(Generic):
 		return Generic.__set__(self, instance, value)
 
 class List(Generic):
-	def __init__(self, default=list, validator=None, mutator=None):
+	def __init__(self, default=list, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
-			self, default=default, validator=validator, mutator=mutator
+			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
 	
 	def __set__(self, instance, value):
@@ -214,9 +217,9 @@ class List(Generic):
 		return Generic.__set__(self, instance, value)
 
 class Set(Generic):
-	def __init__(self, default=set, validator=None, mutator=None):
+	def __init__(self, default=set, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
-			self, default=default, validator=validator, mutator=mutator
+			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
 	
 	def __set__(self, instance, value):
@@ -225,9 +228,9 @@ class Set(Generic):
 		return Generic.__set__(self, instance, value)
 
 class Dict(Generic):
-	def __init__(self, default=dict, validator=None, mutator=None):
+	def __init__(self, default=dict, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
-			self, default=default, validator=validator, mutator=mutator
+			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
 	
 	def __set__(self, instance, value):

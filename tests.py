@@ -305,7 +305,6 @@ class TestObjectDict(unittest.TestCase):
 		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
 		self.assertRaises(ValidationError, setattr, instance, 'test', {'foo': 10})
 		instance.test = {'foo': nested_instance}
-		raise Exception(instance.__json__())
 
 	def test___delete__(self):
 		instance = self._make_one()
