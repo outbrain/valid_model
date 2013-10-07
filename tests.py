@@ -389,7 +389,6 @@ class TestBool(unittest.TestCase):
 		return Foo()
 
 	def test___set___validator(self):
-		from valid_model import ValidationError
 		instance = self._make_one()
 		instance.test = object()
 		self.assertEquals(instance.test, True)
@@ -397,6 +396,8 @@ class TestBool(unittest.TestCase):
 		self.assertEquals(instance.test, True)
 		instance.test = False
 		self.assertEquals(instance.test, False)
+		instance.test = None
+		self.assertEquals(instance.test, None)
 		# validator = bool
 		# instance = self._make_one(validator=validator)
 		# try:
@@ -606,4 +607,4 @@ class TestValidators(unittest.TestCase):
 		self.assertFalse(v("hello"))
 
 if __name__ == '__main__':
-    unittest.main()
+	unittest.main()

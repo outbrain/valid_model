@@ -172,7 +172,8 @@ class Bool(Generic):
 		)
 	
 	def __set__(self, instance, value):
-		value = bool(value)
+		if value is not None:
+			value = bool(value)
 		return Generic.__set__(self, instance, value)
 
 class DateTime(Generic):
