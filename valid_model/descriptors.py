@@ -126,9 +126,8 @@ class String(Generic):
 
 class Integer(Generic):
 	"""
-	This descriptor will convert any set value to a int before being mutated and
+	This descriptor will convert any set value to an int before being mutated and
 	validated.
-	Note: booleans can be cast to int
 	"""
 	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
@@ -137,10 +136,10 @@ class Integer(Generic):
 	
 	def __set__(self, instance, value):
 		if value is not None:
-			try:
-				value = int(value)
-			except ValueError:
+			if not isinstance(value, (int, float)) or isinstance(value, bool):
 				raise ValidationError("{!r} is not an int".format(value))
+			else:
+				value = int(value)
 		return Generic.__set__(self, instance, value)
 
 class Float(Generic):
@@ -155,10 +154,10 @@ class Float(Generic):
 	
 	def __set__(self, instance, value):
 		if value is not None:
-			try:
-				value = float(value)
-			except ValueError:
+			if not isinstance(value, (int, float)) or isinstance(value, bool):
 				raise ValidationError("{!r} is not a float".format(value))
+			else:
+				value = float(value)
 		return Generic.__set__(self, instance, value)
 
 class Bool(Generic):
@@ -173,7 +172,10 @@ class Bool(Generic):
 	
 	def __set__(self, instance, value):
 		if value is not None:
-			value = bool(value)
+			if value in (0, 1) or isinstance(value, bool):
+				value = bool(value)
+			else:
+				raise ValidationError("{!r} is not a bool".format(value))
 		return Generic.__set__(self, instance, value)
 
 class DateTime(Generic):
