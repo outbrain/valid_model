@@ -20,7 +20,7 @@ class EmbeddedObject(Generic):
 
 class ObjectList(Generic): # pragma: no cover
 	def __init__(self, class_obj, mutator=None):
-		warnings.warn("ObjectList(class_obj) should be replaced with List(value_descriptor=EmbeddedObject(class_obj))", DeprecationWarning)
+		warnings.warn("ObjectList(class_obj) should be replaced with List(value=EmbeddedObject(class_obj))", DeprecationWarning)
 		self.class_obj = class_obj
 		validator = lambda x: all(isinstance(i, class_obj) for i in x)
 		Generic.__init__(
@@ -46,7 +46,7 @@ class ObjectList(Generic): # pragma: no cover
 
 class ObjectDict(Generic): # pragma: no cover
 	def __init__(self, class_obj, mutator=None):
-		warnings.warn("ObjectDict(class_obj) should be replaced with Dict(value_descriptor=EmbeddedObject(class_obj))", DeprecationWarning)
+		warnings.warn("ObjectDict(class_obj) should be replaced with Dict(value=EmbeddedObject(class_obj))", DeprecationWarning)
 		self.class_obj = class_obj
 		validator = lambda x: all(isinstance(i, class_obj) for i in x.itervalues())
 		Generic.__init__(
@@ -175,58 +175,58 @@ class TimeDelta(Generic):
 		return Generic.__set__(self, instance, value)
 
 class List(Generic):
-	def __init__(self, default=list, value_descriptor=None, validator=None, mutator=None, nullable=True):
+	def __init__(self, default=list, value=None, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
 			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
-		if value_descriptor is not None and not isinstance(value_descriptor, Generic):
-			raise TypeError('value_descriptor must be None or an instance of Generic')
-		self.value_descriptor = value_descriptor
+		if value is not None and not isinstance(value, Generic):
+			raise TypeError('value must be None or an instance of Generic')
+		self.value = value
 	
 	def __set__(self, instance, value):
 		if not isinstance(value, list):
 			raise ValidationError("{!r} is not a list".format(value))
-		if self.value_descriptor is not None:
+		if self.value is not None:
 			new_value = self.get_default()
 			dummy = Object()
 			for v in value:
-				v = self.value_descriptor.__set__(dummy, v)
+				v = self.value.__set__(dummy, v)
 				new_value.append(v)
 			value = new_value
 		return Generic.__set__(self, instance, value)
 
 class Set(Generic):
-	def __init__(self, default=set, value_descriptor=None, validator=None, mutator=None, nullable=True):
+	def __init__(self, default=set, value=None, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
 			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
-		if value_descriptor is not None and not isinstance(value_descriptor, Generic):
-			raise TypeError('value_descriptor must be None or an instance of Generic')
-		self.value_descriptor = value_descriptor
+		if value is not None and not isinstance(value, Generic):
+			raise TypeError('value must be None or an instance of Generic')
+		self.value = value
 	
 	def __set__(self, instance, value):
 		if not isinstance(value, set):
 			raise ValidationError("{!r} is not a set".format(value))
-		if self.value_descriptor is not None:
+		if self.value is not None:
 			new_value = self.get_default()
 			dummy = Object()
 			for v in value:
-				v = self.value_descriptor.__set__(dummy, v)
+				v = self.value.__set__(dummy, v)
 				new_value.add(v)
 			value = new_value
 		return Generic.__set__(self, instance, value)
 
 class Dict(Generic):
-	def __init__(self, default=dict, key_descriptor=None, value_descriptor=None, validator=None, mutator=None, nullable=True):
+	def __init__(self, default=dict, key=None, value=None, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
 			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
-		if key_descriptor is not None and not isinstance(key_descriptor, Generic):
-			raise TypeError('key_descriptor must be None or an instance of Generic')
-		self.key_descriptor = key_descriptor
-		if value_descriptor is not None and not isinstance(value_descriptor, Generic):
-			raise TypeError('value_descriptor must be None or an instance of Generic')
-		self.value_descriptor = value_descriptor
+		if key is not None and not isinstance(key, Generic):
+			raise TypeError('key must be None or an instance of Generic')
+		self.key = key
+		if value is not None and not isinstance(value, Generic):
+			raise TypeError('value must be None or an instance of Generic')
+		self.value = value
 
 	def __set__(self, instance, value):
 		if not isinstance(value, dict):
@@ -234,10 +234,10 @@ class Dict(Generic):
 		new_value = self.get_default()
 		dummy = Object()
 		for k, v in value.iteritems():
-			if self.key_descriptor is not None:
-				k = self.key_descriptor.__set__(dummy, k)
-			if self.value_descriptor is not None:
-				v = self.value_descriptor.__set__(dummy, v)
+			if self.key is not None:
+				k = self.key.__set__(dummy, k)
+			if self.value is not None:
+				v = self.value.__set__(dummy, v)
 			new_value[k] = v
 		return Generic.__set__(self, instance, new_value)
 

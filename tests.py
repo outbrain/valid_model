@@ -70,7 +70,7 @@ class TestObject(unittest.TestCase):
 		class Foo(Object):
 			basic = Generic()
 			default = Generic(5)
-			embedded = List(value_descriptor=EmbeddedObject(Bar))
+			embedded = List(value=EmbeddedObject(Bar))
 			def validate(self):
 				Object.validate(self)
 				if self.basic == self.default:
@@ -268,7 +268,7 @@ class TestObjectList(unittest.TestCase):
 		from valid_model.descriptors import List, EmbeddedObject
 		from valid_model import Object
 		class Foo(Object):
-			test = List(value_descriptor=EmbeddedObject(Object), mutator=mutator)
+			test = List(value=EmbeddedObject(Object), mutator=mutator)
 		return Foo()
 
 	def test___set___validator(self):
@@ -288,7 +288,7 @@ class TestObjectDict(unittest.TestCase):
 		from valid_model.descriptors import EmbeddedObject, Dict
 		from valid_model import Object
 		class Foo(Object):
-			test = Dict(value_descriptor=EmbeddedObject(Object), mutator=mutator)
+			test = Dict(value=EmbeddedObject(Object), mutator=mutator)
 		return Foo()
 
 	@staticmethod
@@ -296,7 +296,7 @@ class TestObjectDict(unittest.TestCase):
 		from valid_model.descriptors import Dict, Integer
 		from valid_model import Object
 		class Foo(Object):
-			test = Dict(key_descriptor=Integer(validator=lambda x: x > 5), mutator=mutator)
+			test = Dict(key=Integer(validator=lambda x: x > 5), mutator=mutator)
 		return Foo()
 
 	def test___set___validator(self):
@@ -459,11 +459,11 @@ class TestTimeDelta(unittest.TestCase):
 
 class TestList(unittest.TestCase):
 	@staticmethod
-	def _make_one(validator=None, mutator=None, value_descriptor=None):
+	def _make_one(validator=None, mutator=None, value=None):
 		from valid_model.descriptors import List
 		from valid_model import Object
 		class Foo(Object):
-			test = List(value_descriptor=value_descriptor, validator=validator, mutator=mutator)
+			test = List(value=value, validator=validator, mutator=mutator)
 		return Foo()
 
 	def test___set___validator(self):
@@ -473,15 +473,15 @@ class TestList(unittest.TestCase):
 		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
 
 	def test_invalid_descriptor(self):
-		self.assertRaises(TypeError, self._make_one, value_descriptor=5)
+		self.assertRaises(TypeError, self._make_one, value=5)
 
 class TestSet(unittest.TestCase):
 	@staticmethod
-	def _make_one(validator=None, mutator=None, value_descriptor=None):
+	def _make_one(validator=None, mutator=None, value=None):
 		from valid_model.descriptors import Set
 		from valid_model import Object
 		class Foo(Object):
-			test = Set(value_descriptor=value_descriptor, validator=validator, mutator=mutator)
+			test = Set(value=value, validator=validator, mutator=mutator)
 		return Foo()
 
 	def test___set___validator(self):
@@ -496,23 +496,23 @@ class TestSet(unittest.TestCase):
 		self.assertEquals(instance.test, None)
 
 	def test_invalid_descriptor(self):
-		self.assertRaises(TypeError, self._make_one, value_descriptor=5)
+		self.assertRaises(TypeError, self._make_one, value=5)
 
 	def test_descriptor(self):
 		from valid_model import ValidationError
 		from valid_model.descriptors import Integer
-		instance = self._make_one(value_descriptor=Integer())
+		instance = self._make_one(value=Integer())
 		self.assertRaises(ValidationError, setattr, instance, 'test', set(['f', 'o', 'o']))
 		instance.test = {1, 2, 3}
 
 class TestDict(unittest.TestCase):
 	@staticmethod
-	def _make_one(default=dict, validator=None, mutator=None, value_descriptor=None, key_descriptor=None):
+	def _make_one(default=dict, validator=None, mutator=None, value=None, key=None):
 		from valid_model.descriptors import Dict
 		from valid_model import Object
 		class Foo(Object):
 			test = Dict(
-				default=default, validator=validator, mutator=mutator, key_descriptor=key_descriptor, value_descriptor=value_descriptor
+				default=default, validator=validator, mutator=mutator, key=key, value=value
 			)
 		return Foo()
 
@@ -523,8 +523,8 @@ class TestDict(unittest.TestCase):
 		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
 
 	def test_invalid_descriptor(self):
-		self.assertRaises(TypeError, self._make_one, value_descriptor=5)
-		self.assertRaises(TypeError, self._make_one, key_descriptor=5)
+		self.assertRaises(TypeError, self._make_one, value=5)
+		self.assertRaises(TypeError, self._make_one, key=5)
 
 class TestDescriptorFuncs(unittest.TestCase):
 	def test_descriptor_finders(self):
