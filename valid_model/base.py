@@ -20,7 +20,53 @@ validator.
 Each Object also has a validate method which can check conditions that deal with
 multiple attributes within an Object.
 """
-from .descriptors import Generic
+from .exc import ValidationError
+
+class Generic(object):
+	name = None
+	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
+		if not callable(default):
+			self.default = lambda: default
+		else:
+			self.default = default
+		self.nullable = nullable
+		if validator is None:
+			self.validator = lambda x: True
+		elif not callable(validator):
+			raise TypeError('validator must be callable')
+		else:
+			self.validator = validator
+
+		if mutator is None:
+			self.mutator = lambda x: x
+		elif not callable(mutator):
+			raise TypeError('mutator must be callable')
+		else:
+			self.mutator = mutator
+
+	def get_default(self):
+		return self.default()
+
+	def __get__(self, instance, klass=None):
+		if instance is None:
+			return self
+		return getattr(instance, '_fields')[self.name]
+
+	def __set__(self, instance, value):
+		if value is None and not self.nullable:
+			raise ValidationError("{} is not nullable".format(self.name))
+		elif value is not None:
+			try:
+				value = self.mutator(value)
+			except (TypeError, ValueError, ValidationError), ex:
+				raise ValidationError("{}: {}".format(self.name, ex))
+			if not self.validator(value):
+				raise ValidationError(self.name)
+		getattr(instance, '_fields')[self.name] = value
+		return value
+
+	def __delete__(self, instance):
+		getattr(instance, '_fields')[self.name] = None
 
 class ObjectMeta(type):
 	def __new__(mcs, name, bases, attrs):
@@ -52,10 +98,7 @@ class Object(object):
 		self._fields = {}
 		cls = self.__class__
 		for field in cls.field_names:
-			if callable(getattr(cls, field).default):
-				self._fields[field] = getattr(cls, field).default()
-			else:
-				self._fields[field] = getattr(cls, field).default
+			self._fields[field] = getattr(cls, field).default()
 		for key, value in kwargs.items():
 			if key in self._fields:
 				setattr(self, key, value)

@@ -57,7 +57,7 @@ class TestObject(unittest.TestCase):
 
 	def _make_list(self):
 		from valid_model import Object, ValidationError
-		from valid_model.descriptors import Generic, ObjectList
+		from valid_model.descriptors import Generic, List, EmbeddedObject
 		class Bar(Object):
 			t1 = Generic()
 			t2 = Generic(10)
@@ -70,7 +70,7 @@ class TestObject(unittest.TestCase):
 		class Foo(Object):
 			basic = Generic()
 			default = Generic(5)
-			embedded = ObjectList(Bar)
+			embedded = List(value_descriptor=EmbeddedObject(Bar))
 			def validate(self):
 				Object.validate(self)
 				if self.basic == self.default:
@@ -207,14 +207,19 @@ class TestObject(unittest.TestCase):
 
 class TestGeneric(unittest.TestCase):
 	@staticmethod
-	def _make_one(default=None, validator=None, mutator=None):
+	def _make_one(default=None, validator=None, mutator=None, nullable=True):
 		from valid_model.descriptors import Generic
 		from valid_model import Object
 		class Foo(Object):
 			test = Generic(
-				default=default, validator=validator, mutator=mutator
+				default=default, validator=validator, mutator=mutator, nullable=nullable
 			)
 		return Foo()
+
+	def test_nullable(self):
+		from valid_model import ValidationError
+		instance = self._make_one(nullable=False)
+		self.assertRaises(ValidationError, setattr, instance, 'test', None)
 
 	def test___delete__(self):
 		instance = self._make_one(5)
@@ -260,10 +265,10 @@ class TestEmbeddedObject(unittest.TestCase):
 class TestObjectList(unittest.TestCase):
 	@staticmethod
 	def _make_one(mutator=None):
-		from valid_model.descriptors import ObjectList
+		from valid_model.descriptors import List, EmbeddedObject
 		from valid_model import Object
 		class Foo(Object):
-			test = ObjectList(Object, mutator=mutator)
+			test = List(value_descriptor=EmbeddedObject(Object), mutator=mutator)
 		return Foo()
 
 	def test___set___validator(self):
@@ -280,10 +285,18 @@ class TestObjectList(unittest.TestCase):
 class TestObjectDict(unittest.TestCase):
 	@staticmethod
 	def _make_one(mutator=None):
-		from valid_model.descriptors import ObjectDict
+		from valid_model.descriptors import EmbeddedObject, Dict
 		from valid_model import Object
 		class Foo(Object):
-			test = ObjectDict(Object, mutator=mutator)
+			test = Dict(value_descriptor=EmbeddedObject(Object), mutator=mutator)
+		return Foo()
+
+	@staticmethod
+	def _make_two(mutator=None):
+		from valid_model.descriptors import Dict, Integer
+		from valid_model import Object
+		class Foo(Object):
+			test = Dict(key_descriptor=Integer(validator=lambda x: x > 5), mutator=mutator)
 		return Foo()
 
 	def test___set___validator(self):
@@ -293,6 +306,12 @@ class TestObjectDict(unittest.TestCase):
 		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
 		self.assertRaises(ValidationError, setattr, instance, 'test', {'foo': 10})
 		instance.test = {'foo': nested_instance}
+
+		instance2 = self._make_two()
+		self.assertRaises(ValidationError, setattr, instance2, 'test', 10)
+		self.assertRaises(ValidationError, setattr, instance2, 'test', {'abc': 10})
+		self.assertRaises(ValidationError, setattr, instance2, 'test', {2: 10})
+		instance2.test[8] = 5
 
 	def test___delete__(self):
 		instance = self._make_one()
@@ -440,11 +459,11 @@ class TestTimeDelta(unittest.TestCase):
 
 class TestList(unittest.TestCase):
 	@staticmethod
-	def _make_one(validator=None, mutator=None):
+	def _make_one(validator=None, mutator=None, value_descriptor=None):
 		from valid_model.descriptors import List
 		from valid_model import Object
 		class Foo(Object):
-			test = List(validator=validator, mutator=mutator)
+			test = List(value_descriptor=value_descriptor, validator=validator, mutator=mutator)
 		return Foo()
 
 	def test___set___validator(self):
@@ -453,13 +472,16 @@ class TestList(unittest.TestCase):
 		instance.test = [True, 10]
 		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
 
+	def test_invalid_descriptor(self):
+		self.assertRaises(TypeError, self._make_one, value_descriptor=5)
+
 class TestSet(unittest.TestCase):
 	@staticmethod
-	def _make_one(validator=None, mutator=None):
+	def _make_one(validator=None, mutator=None, value_descriptor=None):
 		from valid_model.descriptors import Set
 		from valid_model import Object
 		class Foo(Object):
-			test = Set(validator=validator, mutator=mutator)
+			test = Set(value_descriptor=value_descriptor, validator=validator, mutator=mutator)
 		return Foo()
 
 	def test___set___validator(self):
@@ -473,14 +495,24 @@ class TestSet(unittest.TestCase):
 		del instance.test
 		self.assertEquals(instance.test, None)
 
+	def test_invalid_descriptor(self):
+		self.assertRaises(TypeError, self._make_one, value_descriptor=5)
+
+	def test_descriptor(self):
+		from valid_model import ValidationError
+		from valid_model.descriptors import Integer
+		instance = self._make_one(value_descriptor=Integer())
+		self.assertRaises(ValidationError, setattr, instance, 'test', set(['f', 'o', 'o']))
+		instance.test = {1, 2, 3}
+
 class TestDict(unittest.TestCase):
 	@staticmethod
-	def _make_one(default=None, validator=None, mutator=None):
+	def _make_one(default=dict, validator=None, mutator=None, value_descriptor=None, key_descriptor=None):
 		from valid_model.descriptors import Dict
 		from valid_model import Object
 		class Foo(Object):
 			test = Dict(
-				default=default, validator=validator, mutator=mutator
+				default=default, validator=validator, mutator=mutator, key_descriptor=key_descriptor, value_descriptor=value_descriptor
 			)
 		return Foo()
 
@@ -490,6 +522,19 @@ class TestDict(unittest.TestCase):
 		instance.test = {'a': 1, 'b': 2}
 		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
 
+	def test_invalid_descriptor(self):
+		self.assertRaises(TypeError, self._make_one, value_descriptor=5)
+		self.assertRaises(TypeError, self._make_one, key_descriptor=5)
+
+class TestDescriptorFuncs(unittest.TestCase):
+	def test_descriptor_finders(self):
+		from valid_model.descriptors import descriptor_classes, descriptors
+		descriptors_list = descriptors()
+		descriptor_cls_list = descriptor_classes()
+		for cls in descriptor_cls_list:
+			self.assert_(cls.__name__ in descriptors_list)
+			descriptors_list.remove(cls.__name__)
+		self.assertEquals(len(descriptors_list), 0)
 
 class TestValidators(unittest.TestCase):
 	def test_truthy(self):
