@@ -1,4 +1,3 @@
-
 from valid_model.utils import is_descriptor
 from valid_model.descriptors import *
 import types
@@ -25,7 +24,7 @@ def apply_cassandra_model_patch():
 	for desc in descriptor_classes():
 		patch_descriptor(desc)
 
-apply_cassandra_model_patch()
+#apply_cassandra_model_patch()
 
 def convert_field(col):
 	if isinstance(col, basestring):
@@ -158,6 +157,11 @@ class Delete(QueryBuilder):
 		self.pieces['selection'].add(convert_field(column))
 		return self
 
+def where_clause(obj, expression):
+	field, op, other = expression
+	obj.parameters.append(other)
+	return' {}{}%s'.format(field, op)
+
 _type_map = {
 	String: 'text',
 	Integer: 'int',
@@ -166,19 +170,19 @@ _type_map = {
 	DateTime: 'timestamp',
 }
 _container_map = {
-	ObjectList: 'list',
-	ObjectDict: 'map',
-	EmbeddedObject: 'map',
-	List: 'list',
-	Set: 'set',
-	Dict: 'map',
+	ObjectList: lambda x: 'list',
+	ObjectDict: lambda x: 'map',
+	EmbeddedObject: lambda x: x.class_obj.__name__.lower(),
+	List: lambda x: 'list',
+	Set: lambda x: 'set',
+	Dict: lambda x: 'map',
 }
 def cassandra_model(klass):
 	def generate_ddl(cls):
 		tablename = getattr(cls, '__cassandra_table__', cls.__name__.lower())
 		if not tablename:
 			raise ValueError('__cassandra_table__ must be defined with a non-empty string')
-		partition = getattr(cls, '__cassandra_partition__', None)
+		partition = getattr(cls, '__cassandra_partition__', None) or ([field for field in cls.field_names if not getattr(cls, field).nullable], tuple())
 		if not partition:
 			raise ValueError('__cassandra_partition__ must be defined as a tuple of 2 tuples')
 		ordering = getattr(cls, '__cassandra_order__', None) or None
@@ -188,7 +192,7 @@ def cassandra_model(klass):
 			desc = getattr(cls, field)
 			desc_class = desc.__class__
 			if desc_class in _container_map:
-				cass_type = _container_map[desc_class]
+				cass_type = _container_map[desc_class](desc)
 				try:
 					value_desc = desc_class.value.__class__
 				except AttributeError:
@@ -224,16 +228,16 @@ def cassandra_model(klass):
 
 		return ddl
 
+	for desc_name in klass.field_names:
+		patch_descriptor(getattr(klass, desc_name).__class__`)
 	setattr(klass, 'generate_ddl', classmethod(generate_ddl))
 	return klass
+
+
 
 '''
 ########## NOT DONE START ###############
 
-def where_clause(obj, expression):
-	field, op, other = expression
-	obj.parameters.append(other)
-	return' {} {}{}%s'.format(conjunction, field, op)
 
 def selection_list(selectors):
 	phrase = []
