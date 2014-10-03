@@ -1,14 +1,14 @@
 from setuptools import setup, find_packages
-import sys, os
-
-version = '0.3.2'
 
 setup(name='valid_model',
-      version=version,
-      description="",
+      version='0.3.2',
+      description="Generic data modeling and validation",
       long_description="""\
 """,
-      classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
+      classifiers=[
+            'Intended Audience :: Developers',
+            'License :: OSI Approved :: MIT License'
+      ],
       keywords='',
       author='Joshua Forman',
       author_email='jforman@outbrain.com',
