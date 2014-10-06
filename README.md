@@ -57,19 +57,20 @@ post.__json__() would output
 |validator | no validator| a function which returns truthy if the value is valid
 |default | `None`<sup>1</sup>  | a scalar value or function which the attribute will be set to on object initialization if no value is specified at in the constuctor
 |value| no descriptor<sup>2</sup> | a descriptor to validate values in the container attribute
-| key | no descriptor<sup>3</sup> | a descriptor to validate keys in the container attribute
-<sup>1</sup> Container objects `Set`, `List`, and `Dict` initialize to an empty instance of their respective types
-<sup>2</sup> Only available on `Dict`, `List`, and `Set`
-<sup>3</sup> Only available on `Dict`
+| key | no descriptor<sup>3</sup> | a descriptor to validate keys in the container attribute  
+<sup>1</sup> Container objects `Set`, `List`, and `Dict` initialize to an empty instance of their respective types  
+<sup>2</sup> Only available on `Dict`, `List`, and `Set`  
+<sup>3</sup> Only available on `Dict`  
 
 ##How Validation Works
 Validation occurs whenever an attribute is set.
+
 1. Typechecking and any type coercion implemented occurs
-2. The value is checked if it is None
-  - If it is None and nullable == False a ValidationError is raised otherwise it is set to None
+2. The value is checked if it is None  
+    * If it is None and nullable == False a ValidationError is raised otherwise it is set to None
 3. If mutator function is defined it will run
-4. If a validator function is defined it will run
-  - A ValidationError is raised if the validator function returns falsey
+4. If a validator function is defined it will run  
+    * A ValidationError is raised if the validator function returns falsey
 
 
 ### Complex Validation
