@@ -24,7 +24,7 @@ class BlogPost(Object):
   title = String(nullable=False, mutator=lambda x: x.title())
   updated = DateTime(nullable=False, default=datetime.utcnow) # default to time object is created
   published = DateTime() # default value will be None
-  author = EmbeddedObject(Person, nullable=False)
+  author = EmbeddedObject(Person)
   contributors = List(value=EmbeddedObject(Person), nullable=False)
   tags = List(value=String(nullable=False), nullable=False) #we can have an empty list, but not None
 

@@ -87,7 +87,7 @@ class String(Generic):
 		elif isinstance(value, str):
 			value = unicode(value, 'utf-8')
 		else:
-			value = unicode(value)
+			raise ValidationError("{!r} is not a string".format(value))
 		return Generic.__set__(self, instance, value)
 
 class Integer(Generic):

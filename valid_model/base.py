@@ -23,6 +23,17 @@ multiple attributes within an Object.
 from .exc import ValidationError
 
 class Generic(object):
+	"""
+	Base descriptor class for all valid_model descriptors.
+
+	default: a scalar or callable that an attribute will be initialized to when
+	         an object is constructed
+	mutator: function that will alter value being set prior to validator 
+	         function being executed
+	validator: function that must return truthy or a ValidationError will be 
+	           raised
+	nullable: determines if None is a valid value for this attribute
+	"""
 	name = None
 	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
 		if not callable(default):
@@ -69,6 +80,10 @@ class Generic(object):
 		getattr(instance, '_fields')[self.name] = None
 
 class ObjectMeta(type):
+	"""
+	Metaclass used to set the attribute name to each descriptor in the Object
+	class
+	"""
 	def __new__(mcs, name, bases, attrs):
 		field_names = set()
 		for attr, value in attrs.iteritems():
@@ -131,7 +146,7 @@ class Object(object):
 	
 	def update(self, doc):
 		"""
-		Update attribtues from a dict-like object
+		Update attributes from a dict-like object
 		"""
 		for key, value in doc.iteritems():
 			if key in self._fields:

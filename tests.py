@@ -328,22 +328,12 @@ class TestString(unittest.TestCase):
 		return Foo()
 
 	def test___set___validator(self):
+		from valid_model import ValidationError
 		instance = self._make_one()
 		instance.test = u'hello'
 		instance.test = 'hello'
 		self.assertTrue(isinstance(instance.test, unicode))
-		instance.test = 10
-		self.assertEquals(instance.test, u'10')
-		self.assertTrue(isinstance(instance.test, unicode))
-		# validator = bool
-		# instance = self._make_one(validator=validator)
-		# try:
-		# 	instance.test = False
-		# except ValidationError:
-		# 	pass
-		# else:
-		# 	raise AssertionError('Validator should have fired')
-		# self.assertRaises(TypeError, self._make_one, non_callable)
+		self.assertRaises(ValidationError, setattr, instance, 'test', 10)
 
 class TestInteger(unittest.TestCase):
 	@staticmethod
