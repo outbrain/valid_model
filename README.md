@@ -50,6 +50,7 @@ post.__json__() would output
 """
 ```
 ##Descriptor Options
+
 |Keyword Arg | Default | Description |
 |:-----------|--------|:------------------
 |nullable | `True` | determines if it is valid for an attribute to be set to None
@@ -61,6 +62,8 @@ post.__json__() would output
 <sup>1</sup> Container objects `Set`, `List`, and `Dict` initialize to an empty instance of their respective types  
 <sup>2</sup> Only available on `Dict`, `List`, and `Set`  
 <sup>3</sup> Only available on `Dict`  
+
+`EmbededObject` takes one arguement which is the `Object` class that is being embedded.
 
 ##How Validation Works
 Validation occurs whenever an attribute is set.

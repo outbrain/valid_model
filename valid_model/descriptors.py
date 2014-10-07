@@ -6,11 +6,11 @@ from .utils import is_descriptor
 
 
 class EmbeddedObject(Generic):
-	def __init__(self, class_obj, mutator=None):
+	def __init__(self, class_obj):
 		self.class_obj = class_obj
 		validator = lambda x: isinstance(x, class_obj)
 		Generic.__init__(
-			self, default=class_obj, validator=validator, mutator=mutator
+			self, default=class_obj, validator=validator
 		)
 	
 	def __set__(self, instance, value):
