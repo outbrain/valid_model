@@ -72,8 +72,8 @@ class Insert(QueryBuilder):
 	def statement(self):
 		columns = self.pieces['columns']
 		query = 'INSERT INTO {}'.format(self.tablename)
-		query += ' ({})'.format(','.join(columns))
-		query += ' VALUES ({})'.format(','.join('%(name)s' for name, _ in columns))
+		query += ' ({})'.format(','.join(name for name, _ in columns))
+		query += ' VALUES ({})'.format(','.join('%s' for name, _ in columns))
 		if self.pieces['if_ne']:
 			query += ' IF NOT EXISTS'
 
@@ -229,10 +229,9 @@ def cassandra_model(klass):
 		return ddl
 
 	for desc_name in klass.field_names:
-		patch_descriptor(getattr(klass, desc_name).__class__`)
+		patch_descriptor(getattr(klass, desc_name).__class__)
 	setattr(klass, 'generate_ddl', classmethod(generate_ddl))
 	return klass
-
 
 
 '''
