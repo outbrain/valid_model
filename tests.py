@@ -250,11 +250,11 @@ class TestGeneric(unittest.TestCase):
 
 class TestEmbeddedObject(unittest.TestCase):
 	@staticmethod
-	def _make_one(mutator=None):
+	def _make_one():
 		from valid_model.descriptors import EmbeddedObject
 		from valid_model import Object
 		class Foo(Object):
-			test = EmbeddedObject(Object, mutator=mutator)
+			test = EmbeddedObject(Object)
 		return Foo()
 
 	def test___delete__(self):
