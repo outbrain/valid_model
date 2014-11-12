@@ -102,7 +102,7 @@ class Integer(Generic):
 	
 	def __set__(self, instance, value):
 		if value is not None:
-			if not isinstance(value, (int, float)) or isinstance(value, bool):
+			if not isinstance(value, (int, long, float)) or isinstance(value, bool):
 				raise ValidationError("{!r} is not an int".format(value))
 			else:
 				value = int(value)
@@ -120,7 +120,7 @@ class Float(Generic):
 	
 	def __set__(self, instance, value):
 		if value is not None:
-			if not isinstance(value, (int, float)) or isinstance(value, bool):
+			if not isinstance(value, (int, long, float)) or isinstance(value, bool):
 				raise ValidationError("{!r} is not a float".format(value))
 			else:
 				value = float(value)
