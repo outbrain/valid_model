@@ -79,6 +79,9 @@ class Generic(object):
 	def __delete__(self, instance):
 		getattr(instance, '_fields')[self.name] = None
 
+	def __str__(self):
+		return self.name
+
 class ObjectMeta(type):
 	"""
 	Metaclass used to set the attribute name to each descriptor in the Object
