@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='valid_model',
-      version='0.3.3',
+      version='0.3.4',
       description="Generic data modeling and validation",
       long_description="""\
 """,
