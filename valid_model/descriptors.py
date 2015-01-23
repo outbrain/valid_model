@@ -12,7 +12,7 @@ class EmbeddedObject(Generic):
 		Generic.__init__(
 			self, default=class_obj, validator=validator
 		)
-	
+
 	def __set__(self, instance, value):
 		if isinstance(value, dict):
 			value = self.class_obj(**value)
@@ -26,7 +26,7 @@ class ObjectList(Generic): # pragma: no cover
 		Generic.__init__(
 			self, default=list, validator=validator, mutator=mutator
 		)
-	
+
 	def __set__(self, instance, value):
 		if not isinstance(value, list):
 			raise ValidationError("{} is not a list".format(value))
@@ -52,7 +52,7 @@ class ObjectDict(Generic): # pragma: no cover
 		Generic.__init__(
 			self, default=dict, validator=validator, mutator=mutator
 		)
-	
+
 	def __set__(self, instance, value):
 		if not isinstance(value, dict):
 			raise ValidationError("{!r} is not a dict".format(value))
@@ -73,14 +73,14 @@ class ObjectDict(Generic): # pragma: no cover
 class String(Generic):
 	"""
 	This descriptor will convert any set value to a python unicode string before
-	being mutated and validated.  If the value is type(str) it will be decoded 
+	being mutated and validated.  If the value is type(str) it will be decoded
 	using utf-8
 	"""
 	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
 			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
-	
+
 	def __set__(self, instance, value):
 		if value is None or isinstance(value, unicode):
 			pass
@@ -99,7 +99,7 @@ class Integer(Generic):
 		Generic.__init__(
 			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
-	
+
 	def __set__(self, instance, value):
 		if value is not None:
 			if not isinstance(value, (int, long, float)) or isinstance(value, bool):
@@ -110,14 +110,14 @@ class Integer(Generic):
 
 class Float(Generic):
 	"""
-	This descriptor will convert any set value to a float before being mutated 
+	This descriptor will convert any set value to a float before being mutated
 	and validated.
 	"""
 	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
 			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
-	
+
 	def __set__(self, instance, value):
 		if value is not None:
 			if not isinstance(value, (int, long, float)) or isinstance(value, bool):
@@ -128,14 +128,14 @@ class Float(Generic):
 
 class Bool(Generic):
 	"""
-	This descriptor will convert any set value to a bool before being mutated 
+	This descriptor will convert any set value to a bool before being mutated
 	and validated.
 	"""
 	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
 			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
-	
+
 	def __set__(self, instance, value):
 		if value is not None:
 			if value in (0, 1) or isinstance(value, bool):
@@ -153,7 +153,7 @@ class DateTime(Generic):
 		Generic.__init__(
 			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
-	
+
 	def __set__(self, instance, value):
 		if value is not None and not isinstance(value, datetime):
 			raise ValidationError("{!r} is not a datetime".format(value))
@@ -161,31 +161,34 @@ class DateTime(Generic):
 
 class TimeDelta(Generic):
 	"""
-	This descriptor will assert any set value is a timedelta or None before 
+	This descriptor will assert any set value is a timedelta or None before
 	being mutated and validated.
 	"""
 	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
 		Generic.__init__(
 			self, default=default, validator=validator, mutator=mutator, nullable=nullable
 		)
-	
+
 	def __set__(self, instance, value):
 		if value is not None and not isinstance(value, timedelta):
 			raise ValidationError("{!r} is not a timedelta".format(value))
 		return Generic.__set__(self, instance, value)
 
 class List(Generic):
-	def __init__(self, default=list, value=None, validator=None, mutator=None, nullable=True):
+	def __init__(self, default=list, value=None, validator=None, mutator=None):
 		Generic.__init__(
-			self, default=default, validator=validator, mutator=mutator, nullable=nullable
+			self, default=default, validator=validator, mutator=mutator, nullable=False
 		)
 		if value is not None and not isinstance(value, Generic):
 			raise TypeError('value must be None or an instance of Generic')
 		self.value = value
-	
+
 	def __set__(self, instance, value):
-		if not isinstance(value, list):
+		if value is None:
+			value = []
+		elif not isinstance(value, list):
 			raise ValidationError("{!r} is not a list".format(value))
+
 		if self.value is not None:
 			new_value = self.get_default()
 			dummy = Object()
@@ -196,16 +199,18 @@ class List(Generic):
 		return Generic.__set__(self, instance, value)
 
 class Set(Generic):
-	def __init__(self, default=set, value=None, validator=None, mutator=None, nullable=True):
+	def __init__(self, default=set, value=None, validator=None, mutator=None):
 		Generic.__init__(
-			self, default=default, validator=validator, mutator=mutator, nullable=nullable
+			self, default=default, validator=validator, mutator=mutator, nullable=False
 		)
 		if value is not None and not isinstance(value, Generic):
 			raise TypeError('value must be None or an instance of Generic')
 		self.value = value
-	
+
 	def __set__(self, instance, value):
-		if not isinstance(value, set):
+		if value is None:
+			value = set()
+		elif not isinstance(value, set):
 			raise ValidationError("{!r} is not a set".format(value))
 		if self.value is not None:
 			new_value = self.get_default()
@@ -217,9 +222,9 @@ class Set(Generic):
 		return Generic.__set__(self, instance, value)
 
 class Dict(Generic):
-	def __init__(self, default=dict, key=None, value=None, validator=None, mutator=None, nullable=True):
+	def __init__(self, default=dict, key=None, value=None, validator=None, mutator=None):
 		Generic.__init__(
-			self, default=default, validator=validator, mutator=mutator, nullable=nullable
+			self, default=default, validator=validator, mutator=mutator, nullable=False
 		)
 		if key is not None and not isinstance(key, Generic):
 			raise TypeError('key must be None or an instance of Generic')
@@ -229,7 +234,9 @@ class Dict(Generic):
 		self.value = value
 
 	def __set__(self, instance, value):
-		if not isinstance(value, dict):
+		if value is None:
+			value = {}
+		elif not isinstance(value, dict):
 			raise ValidationError("{!r} is not a dict".format(value))
 		new_value = self.get_default()
 		dummy = Object()
@@ -241,45 +248,16 @@ class Dict(Generic):
 			new_value[k] = v
 		return Generic.__set__(self, instance, new_value)
 
-'''
-class Serialized(Generic):
-	def __init__(self, serializer, deserializer, default=None, validator=None, mutator=None, nullable=True):
-		Generic.__init__(
-			self, default=default, validator=validator, mutator=mutator, nullable=nullable
-		)
-		self.serializer = serializer
-		self.deserializer = deserializer
-
-	def __get__(self, instance, klass=None):
-		value = Generic.__get__(self, instance, klass=klass)
-		if value is not None:
-			return self.deserializer(value)
-		else:
-			return value
-
-	def __set__(self, instance, value):
-		if value is None:
-			pass
-		elif isinstance(value, str):
-			value = self.deserializer(value)
-		elif isinstance(value, unicode):
-			value = value.encode('utf-8')
-			value = self.deserializer(value)
-
-		if value is not None:
-			value = self.serializer(value)
-		return Generic.__set__(self, instance, value)
-'''
 
 def descriptors():
 	return [
-		name for name, value in globals().iteritems() 
+		name for name, value in globals().iteritems()
 		if is_descriptor(value) and issubclass(value, Generic)
 	]
 
 def descriptor_classes():
 	return [
-		value for value in globals().itervalues() 
+		value for value in globals().itervalues()
 		if is_descriptor(value) and issubclass(value, Generic)
 	]
 

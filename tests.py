@@ -465,6 +465,11 @@ class TestList(unittest.TestCase):
 	def test_invalid_descriptor(self):
 		self.assertRaises(TypeError, self._make_one, value=5)
 
+	def test_none(self):
+		instance = self._make_one()
+		instance.test = None
+		self.assertEquals(instance.test, [])
+
 class TestSet(unittest.TestCase):
 	@staticmethod
 	def _make_one(validator=None, mutator=None, value=None):
@@ -495,6 +500,11 @@ class TestSet(unittest.TestCase):
 		self.assertRaises(ValidationError, setattr, instance, 'test', set(['f', 'o', 'o']))
 		instance.test = {1, 2, 3}
 
+	def test_none(self):
+		instance = self._make_one()
+		instance.test = None
+		self.assertEquals(instance.test, set())
+
 class TestDict(unittest.TestCase):
 	@staticmethod
 	def _make_one(default=dict, validator=None, mutator=None, value=None, key=None):
@@ -515,6 +525,11 @@ class TestDict(unittest.TestCase):
 	def test_invalid_descriptor(self):
 		self.assertRaises(TypeError, self._make_one, value=5)
 		self.assertRaises(TypeError, self._make_one, key=5)
+
+	def test_none(self):
+		instance = self._make_one()
+		instance.test = None
+		self.assertEquals(instance.test, {})
 
 class TestDescriptorFuncs(unittest.TestCase):
 	def test_descriptor_finders(self):
