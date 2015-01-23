@@ -25,8 +25,8 @@ class BlogPost(Object):
   updated = DateTime(nullable=False, default=datetime.utcnow) # default to time object is created
   published = DateTime() # default value will be None
   author = EmbeddedObject(Person)
-  contributors = List(value=EmbeddedObject(Person), nullable=False)
-  tags = List(value=String(nullable=False), nullable=False) #we can have an empty list, but not None
+  contributors = List(value=EmbeddedObject(Person))
+  tags = List(value=String(nullable=False))
 
   def validate(self):
     super(BlogPost, self).validate()
@@ -53,17 +53,18 @@ post.__json__() would output
 
 |Keyword Arg | Default | Description |
 |:-----------|--------|:------------------
-|nullable | `True` | determines if it is valid for an attribute to be set to None
+|nullable | `True`<sup>1</sup> | determines if it is valid for an attribute to be set to None
 |mutator | no mutator | allows some mutation to occur on the value. a common use case would be to format a string to always be uppercase
 |validator | no validator| a function which returns truthy if the value is valid
-|default | `None`<sup>1</sup>  | a scalar value or function which the attribute will be set to on object initialization if no value is specified at in the constuctor
-|value| no descriptor<sup>2</sup> | a descriptor to validate values in the container attribute
-| key | no descriptor<sup>3</sup> | a descriptor to validate keys in the container attribute  
-<sup>1</sup> Container objects `Set`, `List`, and `Dict` initialize to an empty instance of their respective types  
-<sup>2</sup> Only available on `Dict`, `List`, and `Set`  
-<sup>3</sup> Only available on `Dict`  
+|default | `None`<sup>2</sup>  | a scalar value or function which the attribute will be set to on object initialization if no value is specified at in the constuctor
+|value| no descriptor<sup>3</sup> | a descriptor to validate values in the container attribute
+| key | no descriptor<sup>4</sup> | a descriptor to validate keys in the container attribute
+<sup>1</sup> Not available on `Set`, `List`, and `Dict`. If an attribute with that descriptor is set to `None` it will actually set it to an empty instance of their respective types  
+<sup>2</sup> Container objects `Set`, `List`, and `Dict` initialize to an empty instance of their respective types  
+<sup>3</sup> Only available on `Dict`, `List`, and `Set`  
+<sup>4</sup> Only available on `Dict`  
 
-`EmbededObject` takes one arguement which is the `Object` class that is being embedded.
+`EmbededObject` takes one argument which is the `Object` class that is being embedded.
 
 ##How Validation Works
 Validation occurs whenever an attribute is set.
