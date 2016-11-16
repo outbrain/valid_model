@@ -1,25 +1,26 @@
 # encoding: utf-8
 """
-The purpose of the Object class is to be able to create objects from arbitrary 
-dictionaries and be able to validate them.  Primarily this is for being used 
+The purpose of the Object class is to be able to create objects from arbitrary
+dictionaries and be able to validate them.  Primarily this is for being used
 with MongoDB to validate documents and to ensure that all expected fields exists
  and only those defined fields exist.
 
-There is no direct tie into MongoDB though so this can be used for any class 
+There is no direct tie into MongoDB though so this can be used for any class
 which contains state that ought to be validated.
 
-When an attribute on the Object instance is set (if the value is not None) a 
+When an attribute on the Object instance is set (if the value is not None) a
 mutator function may be executed to transform the value being set.  A simple
-example of this would be to make sure that a String attribute is always 
+example of this would be to make sure that a String attribute is always
 lowercase.
 
-After the value is mutated it is then validated.  A ValidationError will be 
+After the value is mutated it is then validated.  A ValidationError will be
 raised if the mutator fails or the value being set fails the attribute's
 validator.
 
 Each Object also has a validate method which can check conditions that deal with
 multiple attributes within an Object.
 """
+from weakref import WeakKeyDictionary
 from .exc import ValidationError
 
 class Generic(object):
@@ -28,14 +29,15 @@ class Generic(object):
 
 	default: a scalar or callable that an attribute will be initialized to when
 	         an object is constructed
-	mutator: function that will alter value being set prior to validator 
+	mutator: function that will alter value being set prior to validator
 	         function being executed
-	validator: function that must return truthy or a ValidationError will be 
+	validator: function that must return truthy or a ValidationError will be
 	           raised
 	nullable: determines if None is a valid value for this attribute
 	"""
 	name = None
 	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
+		self._references = WeakKeyDictionary()
 		if not callable(default):
 			self.default = lambda: default
 		else:
@@ -61,7 +63,10 @@ class Generic(object):
 	def __get__(self, instance, klass=None):
 		if instance is None:
 			return self
-		return getattr(instance, '_fields')[self.name]
+		try:
+			return self._references[instance]
+		except KeyError:
+			return self.default()
 
 	def __set__(self, instance, value):
 		if value is None and not self.nullable:
@@ -73,11 +78,11 @@ class Generic(object):
 				raise ValidationError("{}: {}".format(self.name, ex))
 			if not self.validator(value):
 				raise ValidationError(self.name)
-		getattr(instance, '_fields')[self.name] = value
+		self._references[instance] = value
 		return value
 
 	def __delete__(self, instance):
-		getattr(instance, '_fields')[self.name] = None
+		self._references[instance] = None
 
 	def __str__(self):
 		return self.name
@@ -113,12 +118,8 @@ class Object(object):
 	field_names = None # stub gets set in ObjectMeta.__new__
 
 	def __init__(self, **kwargs):
-		self._fields = {}
-		cls = self.__class__
-		for field in cls.field_names:
-			self._fields[field] = getattr(cls, field).default()
 		for key, value in kwargs.items():
-			if key in self._fields:
+			if key in self.field_names: # pylint: disable=E1135,E1133
 				setattr(self, key, value)
 
 	def __str__(self):
@@ -129,7 +130,8 @@ class Object(object):
 		Convert the Object instance and any nested Objects into a dict.
 		"""
 		json_doc = {}
-		for key, value in self._fields.iteritems():
+		for key in self.field_names: # pylint: disable=E1135,E1133
+			value = getattr(self, key)
 			if hasattr(value, '__json__'):
 				json_doc[key] = value.__json__()
 			elif isinstance(value, list):
@@ -144,24 +146,24 @@ class Object(object):
 				)
 			else:
 				json_doc[key] = value
-				
+
 		return json_doc
-	
+
 	def update(self, doc):
 		"""
 		Update attributes from a dict-like object
 		"""
 		for key, value in doc.iteritems():
-			if key in self._fields:
+			if key in self.field_names: # pylint: disable=E1135,E1133
 				setattr(self, key, value)
 
 	def validate(self):
 		"""
 		Allows for multi-field validation
 		"""
-		for key in self._fields:
-			setattr(self, key, self._fields[key])
-		for key, value in self._fields.iteritems():
+		for key in self.field_names: # pylint: disable=E1135,E1133
+			value = getattr(self, key)
+			setattr(self, key, value)
 			if hasattr(value, 'validate'):
 				value.validate()
 			elif isinstance(value, list):
