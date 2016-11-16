@@ -14,9 +14,12 @@ class EmbeddedObject(Generic):
 		)
 
 	def __set__(self, instance, value):
-		if isinstance(value, dict):
-			value = self.class_obj(**value)
-		return Generic.__set__(self, instance, value)
+		try:
+			if isinstance(value, dict):
+				value = self.class_obj(**value)
+			return Generic.__set__(self, instance, value)
+		except ValidationError as ex:
+			raise ValidationError(ex.msg, '{}.{}'.format(self.name, ex.field) if ex.field else self.name)
 
 class ObjectList(Generic): # pragma: no cover
 	def __init__(self, class_obj, mutator=None):
@@ -87,7 +90,7 @@ class String(Generic):
 		elif isinstance(value, str):
 			value = unicode(value, 'utf-8')
 		else:
-			raise ValidationError("{!r} is not a string".format(value))
+			raise ValidationError("{!r} is not a string".format(value), self.name)
 		return Generic.__set__(self, instance, value)
 
 class Integer(Generic):
@@ -103,7 +106,7 @@ class Integer(Generic):
 	def __set__(self, instance, value):
 		if value is not None:
 			if not isinstance(value, (int, long, float)) or isinstance(value, bool):
-				raise ValidationError("{!r} is not an int".format(value))
+				raise ValidationError("{!r} is not an int".format(value), self.name)
 			else:
 				value = int(value)
 		return Generic.__set__(self, instance, value)
@@ -121,7 +124,7 @@ class Float(Generic):
 	def __set__(self, instance, value):
 		if value is not None:
 			if not isinstance(value, (int, long, float)) or isinstance(value, bool):
-				raise ValidationError("{!r} is not a float".format(value))
+				raise ValidationError("{!r} is not a float".format(value), self.name)
 			else:
 				value = float(value)
 		return Generic.__set__(self, instance, value)
@@ -141,7 +144,7 @@ class Bool(Generic):
 			if value in (0, 1) or isinstance(value, bool):
 				value = bool(value)
 			else:
-				raise ValidationError("{!r} is not a bool".format(value))
+				raise ValidationError("{!r} is not a bool".format(value), self.name)
 		return Generic.__set__(self, instance, value)
 
 class DateTime(Generic):
@@ -156,7 +159,7 @@ class DateTime(Generic):
 
 	def __set__(self, instance, value):
 		if value is not None and not isinstance(value, datetime):
-			raise ValidationError("{!r} is not a datetime".format(value))
+			raise ValidationError("{!r} is not a datetime".format(value), self.name)
 		return Generic.__set__(self, instance, value)
 
 class TimeDelta(Generic):
@@ -171,7 +174,7 @@ class TimeDelta(Generic):
 
 	def __set__(self, instance, value):
 		if value is not None and not isinstance(value, timedelta):
-			raise ValidationError("{!r} is not a timedelta".format(value))
+			raise ValidationError("{!r} is not a timedelta".format(value), self.name)
 		return Generic.__set__(self, instance, value)
 
 class List(Generic):
@@ -187,13 +190,16 @@ class List(Generic):
 		if value is None:
 			value = []
 		elif not isinstance(value, list):
-			raise ValidationError("{!r} is not a list".format(value))
+			raise ValidationError("{!r} is not a list".format(value), self.name)
 
 		if self.value is not None:
 			new_value = self.get_default()
 			dummy = Object()
 			for v in value:
-				v = self.value.__set__(dummy, v)
+				try:
+					v = self.value.__set__(dummy, v)
+				except ValidationError as ex:
+					raise ValidationError(ex.msg, '{}.{}'.format(self.name, ex.field) if ex.field else self.name)
 				new_value.append(v)
 			value = new_value
 		return Generic.__set__(self, instance, value)
@@ -211,12 +217,15 @@ class Set(Generic):
 		if value is None:
 			value = set()
 		elif not isinstance(value, set):
-			raise ValidationError("{!r} is not a set".format(value))
+			raise ValidationError("{!r} is not a set".format(value), self.name)
 		if self.value is not None:
 			new_value = self.get_default()
 			dummy = Object()
 			for v in value:
-				v = self.value.__set__(dummy, v)
+				try:
+					v = self.value.__set__(dummy, v)
+				except ValidationError as ex:
+					raise ValidationError(ex.msg, '{}.{}'.format(self.name, ex.field) if ex.field else self.name)
 				new_value.add(v)
 			value = new_value
 		return Generic.__set__(self, instance, value)
@@ -237,17 +246,22 @@ class Dict(Generic):
 		if value is None:
 			value = {}
 		elif not isinstance(value, dict):
-			raise ValidationError("{!r} is not a dict".format(value))
+			raise ValidationError("{!r} is not a dict".format(value), self.name)
 		new_value = self.get_default()
 		dummy = Object()
 		for k, v in value.iteritems():
 			if self.key is not None:
-				k = self.key.__set__(dummy, k)
+				try:
+					k = self.key.__set__(dummy, k)
+				except ValidationError as ex:
+					raise ValidationError(ex.msg, "{} key {}".format(self.name, k))
 			if self.value is not None:
-				v = self.value.__set__(dummy, v)
+				try:
+					v = self.value.__set__(dummy, v)
+				except ValidationError as ex:
+					raise ValidationError(ex.msg, "{}['{}']".format(self.name, k))
 			new_value[k] = v
 		return Generic.__set__(self, instance, new_value)
-
 
 def descriptors():
 	return [

@@ -1,5 +1,22 @@
 import unittest
 
+class TestValidationError(unittest.TestCase):
+	def _make_one(self, msg, field=None):
+		from valid_model import ValidationError
+		return ValidationError(msg, field=field)
+
+	def test___str__(self):
+		self.assertEquals(str(self._make_one('foo')), 'foo')
+		self.assertEquals(str(self._make_one('foo', 'bar')), 'bar: foo')
+
+	def test___unicode__(self):
+		self.assertEquals(unicode(self._make_one('foo')), u'foo')
+		self.assertEquals(unicode(self._make_one('foo', 'bar')), u'bar: foo')
+
+	def test___repr__(self):
+		self.assertEquals(repr(self._make_one('foo')), "ValidationError('foo', None)")
+		self.assertEquals(repr(self._make_one('foo', 'bar')), "ValidationError('foo', 'bar')")
+
 class TestObject(unittest.TestCase):
 	def _make_one(self):
 		from valid_model import Object, ValidationError
@@ -10,7 +27,7 @@ class TestObject(unittest.TestCase):
 			called_default = Generic(lambda: 'hello')
 			def validate(self):
 				if self.basic == self.default:
-					raise ValidationError
+					raise ValidationError('bad stuff')
 		return Foo
 
 	def _make_inherited(self):
@@ -23,7 +40,7 @@ class TestObject(unittest.TestCase):
 			def validate(self):
 				Object.validate(self)
 				if self.basic == self.default:
-					raise ValidationError
+					raise ValidationError('bad stuff 2')
 
 		class Foo(Bar):
 			new_attr = Generic()
@@ -41,7 +58,7 @@ class TestObject(unittest.TestCase):
 			def validate(self):
 				Object.validate(self)
 				if self.t1 == self.t2:
-					raise ValidationError
+					raise ValidationError('bad stuff 3')
 
 
 		class Foo(Object):
@@ -51,7 +68,7 @@ class TestObject(unittest.TestCase):
 			def validate(self):
 				Object.validate(self)
 				if self.basic == self.default:
-					raise ValidationError
+					raise ValidationError('bad stuff 4')
 
 		return Foo, Bar
 
@@ -64,7 +81,7 @@ class TestObject(unittest.TestCase):
 			def validate(self):
 				Object.validate(self)
 				if self.t1 == self.t2:
-					raise ValidationError
+					raise ValidationError('bad stuff 5')
 
 
 		class Foo(Object):
@@ -74,9 +91,19 @@ class TestObject(unittest.TestCase):
 			def validate(self):
 				Object.validate(self)
 				if self.basic == self.default:
-					raise ValidationError
+					raise ValidationError('bad stuff 6')
 
 		return Foo, Bar
+
+	def _make_dict(self):
+		from valid_model import Object
+		from valid_model.descriptors import Generic, Dict
+		class Foo(Object):
+			basic = Generic()
+			default = Generic(5)
+			embedded = Dict()
+
+		return Foo
 
 	def test_basic(self):
 		Foo = self._make_one()
@@ -204,6 +231,21 @@ class TestObject(unittest.TestCase):
 		Foo, Bar = self._make_list()
 		instance = Foo(embedded=[Bar(t1=20, t2=20)])
 		self.assertRaises(ValidationError, instance.validate)
+
+	def test_descriptor_name(self):
+		Foo = self._make_one()
+		self.assertEquals(str(Foo.basic), 'basic')
+
+	def test___str__(self):
+		Foo = self._make_one()
+		instance = Foo(basic='test')
+		self.assertEquals(str(instance), str(instance.__json__()))
+
+	def test___json__(self):
+		from valid_model import ValidationError
+		Foo = self._make_dict()
+		instance = Foo(embedded={'a': 'b'})
+		self.assertDictEqual(instance.__json__(), {'basic': None, 'default': 5, 'embedded': {'a': 'b'}})
 
 class TestGeneric(unittest.TestCase):
 	@staticmethod
