@@ -216,7 +216,7 @@ class Dict(Generic):
 class ObjectList(List):
 	def __init__(self, class_obj, mutator=None):
 		List.__init__(
-			self, value=class_obj, mutator=mutator
+			self, value=EmbeddedObject(class_obj), mutator=mutator
 		)
 		self.class_obj = class_obj
 		warnings.warn("ObjectList(class_obj) should be replaced with List(value=EmbeddedObject(class_obj))", DeprecationWarning)
@@ -224,7 +224,7 @@ class ObjectList(List):
 class ObjectDict(Dict):
 	def __init__(self, class_obj, mutator=None):
 		Dict.__init__(
-			self, value=class_obj, mutator=mutator
+			self, value=EmbeddedObject(class_obj), mutator=mutator
 		)
 		self.class_obj = class_obj
 		warnings.warn("ObjectDict(class_obj) should be replaced with Dict(value=EmbeddedObject(class_obj))", DeprecationWarning)
