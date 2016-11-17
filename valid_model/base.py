@@ -38,10 +38,7 @@ class Generic(object):
 	name = None
 	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
 		self._references = WeakKeyDictionary()
-		if not callable(default):
-			self.default = lambda: default
-		else:
-			self.default = default
+		self.default = default
 		self.nullable = nullable
 		if validator is None:
 			self.validator = lambda x: True
@@ -58,7 +55,11 @@ class Generic(object):
 			self.mutator = mutator
 
 	def get_default(self):
-		return self.default()
+		if not callable(self.default):
+			default = lambda: self.default
+		else:
+			default = self.default
+		return default()
 
 	def __get__(self, instance, klass=None):
 		if instance is None:
@@ -66,7 +67,7 @@ class Generic(object):
 		try:
 			return self._references[instance]
 		except KeyError:
-			return self.default()
+			return self.get_default()
 
 	def __set__(self, instance, value):
 		if value is None and not self.nullable:
