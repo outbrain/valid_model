@@ -143,7 +143,7 @@ class List(Generic):
 			raise ValidationError("{!r} is not a list".format(value), self.name)
 
 		if self.value is not None:
-			new_value = self.get_default()
+			new_value = list()
 			dummy = Object()
 			for v in value:
 				try:
@@ -169,7 +169,7 @@ class Set(Generic):
 		elif not isinstance(value, set):
 			raise ValidationError("{!r} is not a set".format(value), self.name)
 		if self.value is not None:
-			new_value = self.get_default()
+			new_value = set()
 			dummy = Object()
 			for v in value:
 				try:
@@ -197,7 +197,7 @@ class Dict(Generic):
 			value = {}
 		elif not isinstance(value, dict):
 			raise ValidationError("{!r} is not a dict".format(value), self.name)
-		new_value = self.get_default()
+		new_value = {}
 		dummy = Object()
 		for k, v in value.iteritems():
 			if self.key is not None:
