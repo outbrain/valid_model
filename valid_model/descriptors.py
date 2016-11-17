@@ -21,57 +21,7 @@ class EmbeddedObject(Generic):
 		except ValidationError as ex:
 			raise ValidationError(ex.msg, '{}.{}'.format(self.name, ex.field) if ex.field else self.name)
 
-class ObjectList(Generic): # pragma: no cover
-	def __init__(self, class_obj, mutator=None):
-		warnings.warn("ObjectList(class_obj) should be replaced with List(value=EmbeddedObject(class_obj))", DeprecationWarning)
-		self.class_obj = class_obj
-		validator = lambda x: all(isinstance(i, class_obj) for i in x)
-		Generic.__init__(
-			self, default=list, validator=validator, mutator=mutator
-		)
 
-	def __set__(self, instance, value):
-		if not isinstance(value, list):
-			raise ValidationError("{} is not a list".format(value))
-		new_value = []
-		for v in value:
-			if isinstance(v, dict):
-				new_value.append(self.class_obj(**v))
-			elif isinstance(v, self.class_obj):
-				new_value.append(v)
-			else:
-				raise ValidationError(
-					"Cannot convert from {} to {}".format(
-						v.__class__.__name__, self.class_obj.__name__
-					)
-				)
-		return Generic.__set__(self, instance, new_value)
-
-class ObjectDict(Generic): # pragma: no cover
-	def __init__(self, class_obj, mutator=None):
-		warnings.warn("ObjectDict(class_obj) should be replaced with Dict(value=EmbeddedObject(class_obj))", DeprecationWarning)
-		self.class_obj = class_obj
-		validator = lambda x: all(isinstance(i, class_obj) for i in x.itervalues())
-		Generic.__init__(
-			self, default=dict, validator=validator, mutator=mutator
-		)
-
-	def __set__(self, instance, value):
-		if not isinstance(value, dict):
-			raise ValidationError("{!r} is not a dict".format(value))
-		new_value = {}
-		for k, v in value.iteritems():
-			if isinstance(v, dict):
-				new_value[k] = self.class_obj(**v)
-			elif isinstance(v, self.class_obj):
-				new_value[k] = v
-			else:
-				raise ValidationError(
-					"Cannot convert from {} to {}".format(
-						v.__class__.__name__, self.class_obj.__name__
-					)
-				)
-		return Generic.__set__(self, instance, new_value)
 
 class String(Generic):
 	"""
@@ -262,6 +212,23 @@ class Dict(Generic):
 					raise ValidationError(ex.msg, "{}['{}']".format(self.name, k))
 			new_value[k] = v
 		return Generic.__set__(self, instance, new_value)
+
+class ObjectList(List):
+	def __init__(self, class_obj, mutator=None):
+		List.__init__(
+			self, value=class_obj, mutator=mutator
+		)
+		self.class_obj = class_obj
+		warnings.warn("ObjectList(class_obj) should be replaced with List(value=EmbeddedObject(class_obj))", DeprecationWarning)
+
+class ObjectDict(Dict):
+	def __init__(self, class_obj, mutator=None):
+		Dict.__init__(
+			self, value=class_obj, mutator=mutator
+		)
+		self.class_obj = class_obj
+		warnings.warn("ObjectDict(class_obj) should be replaced with Dict(value=EmbeddedObject(class_obj))", DeprecationWarning)
+
 
 def descriptors():
 	return [
