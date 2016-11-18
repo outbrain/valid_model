@@ -20,7 +20,6 @@ validator.
 Each Object also has a validate method which can check conditions that deal with
 multiple attributes within an Object.
 """
-from weakref import WeakKeyDictionary
 from .exc import ValidationError
 
 class Generic(object):
@@ -37,7 +36,6 @@ class Generic(object):
 	"""
 	name = None
 	def __init__(self, default=None, validator=None, mutator=None, nullable=True):
-		self._references = WeakKeyDictionary()
 		self.default = default
 		self.nullable = nullable
 		if validator is None:
@@ -64,10 +62,7 @@ class Generic(object):
 	def __get__(self, instance, klass=None):
 		if instance is None:
 			return self
-		try:
-			return self._references[instance]
-		except KeyError:
-			return self.get_default()
+		return getattr(instance, '_fields')[self.name]
 
 	def __set__(self, instance, value):
 		if value is None and not self.nullable:
@@ -79,11 +74,11 @@ class Generic(object):
 				raise ValidationError("{}: {}".format(self.name, ex))
 			if not self.validator(value):
 				raise ValidationError(self.name)
-		self._references[instance] = value
+		getattr(instance, '_fields')[self.name] = value
 		return value
 
 	def __delete__(self, instance):
-		self._references[instance] = None
+		getattr(instance, '_fields')[self.name] = None
 
 	def __str__(self):
 		return self.name
@@ -119,6 +114,10 @@ class Object(object):
 	field_names = None # stub gets set in ObjectMeta.__new__
 
 	def __init__(self, **kwargs):
+		self._fields = {}
+		cls = self.__class__
+		for field in self.field_names: # pylint: disable=E1135,E1133
+			self._fields[field] = getattr(cls, field).get_default()
 		for key, value in kwargs.items():
 			if key in self.field_names: # pylint: disable=E1135,E1133
 				setattr(self, key, value)
@@ -131,8 +130,7 @@ class Object(object):
 		Convert the Object instance and any nested Objects into a dict.
 		"""
 		json_doc = {}
-		for key in self.field_names: # pylint: disable=E1135,E1133
-			value = getattr(self, key)
+		for key, value in self._fields.iteritems():
 			if hasattr(value, '__json__'):
 				json_doc[key] = value.__json__()
 			elif isinstance(value, list):
@@ -155,16 +153,16 @@ class Object(object):
 		Update attributes from a dict-like object
 		"""
 		for key, value in doc.iteritems():
-			if key in self.field_names: # pylint: disable=E1135,E1133
+			if key in self._fields:
 				setattr(self, key, value)
 
 	def validate(self):
 		"""
 		Allows for multi-field validation
 		"""
-		for key in self.field_names: # pylint: disable=E1135,E1133
-			value = getattr(self, key)
-			setattr(self, key, value)
+		for key in self._fields:
+			setattr(self, key, self._fields[key])
+		for key, value in self._fields.iteritems():
 			if hasattr(value, 'validate'):
 				value.validate()
 			elif isinstance(value, list):
